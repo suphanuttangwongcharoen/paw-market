@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>อุ้งเท้า (Paw Market Place)</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background-color: #FBF6EF; font-family: 'Sarabun', sans-serif; color: #2E2621; }
+    input:focus, textarea:focus { border-color: #F0AEB4 !important; outline: none; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #EDE3D6; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = window.Recharts || {};
+
+    const LucideIcon = ({ name, size = 18, color = "currentColor", style = {}, fill = "none" }) => {
+      const ref = useRef(null);
+      useEffect(() => {
+        if (ref.current && window.lucide) {
+          ref.current.innerHTML = '';
+          const iconNode = window.lucide.createElement(window.lucide.icons[name] || window.lucide.icons['HelpCircle']);
+          if (iconNode) {
+            iconNode.setAttribute('width', size);
+            iconNode.setAttribute('height', size);
+            iconNode.setAttribute('stroke', color);
+            iconNode.setAttribute('fill', fill);
+            ref.current.appendChild(iconNode);
+          }
+        }
+      }, [name, size, color, fill]);
+      return <span ref={ref} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...style }} />;
+    };
+
+    const TOKENS = {
+      bg: "#FBF6EF", surface: "#FFFFFF", ink: "#2E2621", inkSoft: "#6B6058", line: "#EDE3D6",
+      fish: "#5B8FA8", fishSoft: "#E4EEF2", cat: "#E97A5B", catSoft: "#FBE7E0", dog: "#D8A339",
+      dogSoft: "#F8EEDA", rabbit: "#6E9E72", rabbitSoft: "#E5EFE3", bird: "#8A65A8", birdSoft: "#F0EBF5",
+      reptile: "#C07D48", reptileSoft: "#F7ECE1", pink: "#F0AEB4",
+    };
+
+    const CATS = [
+      { id: "fish", label: "ปลา/สัตว์น้ำ", icon: "Fish", color: TOKENS.fish, soft: TOKENS.fishSoft },
+      { id: "cat", label: "แมว", icon: "Cat", color: TOKENS.cat, soft: TOKENS.catSoft },
+      { id: "dog", label: "สุนัข", icon: "Dog", color: TOKENS.dog, soft: TOKENS.dogSoft },
+      { id: "rabbit", label: "กระต่าย/เล็ก", icon: "Rabbit", color: TOKENS.rabbit, soft: TOKENS.rabbitSoft },
+      { id: "bird", label: "นก/สัตว์ปีก", icon: "Bird", color: TOKENS.bird, soft: TOKENS.birdSoft },
+      { id: "reptile", label: "สัตว์เลื้อยคลาน", icon: "Bug", color: TOKENS.reptile, soft: TOKENS.reptileSoft },
+    ];
+
+    const PRODUCTS = [
+      { id: 1, cat: "fish", name: "ปลากัดฮาล์ฟมูน สีน้ำเงินคราม", price: 290, rating: 4.9, sold: 312, badge: "ขายดี", img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&w=600&q=80", desc: "ปลากัดฮาล์ฟมูนหางแผ่กว้าง 180 องศา เลี้ยงง่าย เหมาะกับตู้เล็ก", care: "น้ำสะอาดอุณหภูมิห้อง 25-28°C เปลี่ยนน้ำ 30% ทุกสัปดาห์" },
+      { id: 2, cat: "fish", name: "ปลาทอง ออรันดา หัวสิงห์ฮอลแลนด์", price: 450, rating: 4.7, sold: 154, badge: null, img: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&w=600&q=80", desc: "วุ้นหัวโตสมบูรณ์ ว่ายน้ำเชื่องช้าดูเพลิดเพลิน", care: "ใช้ออกซิเจนตลอดเวลา ให้อาหารเร่งสี" },
+      { id: 3, cat: "fish", name: "กุ้งเชอร์รี่แคระ (ชุด 10 ตัว)", price: 150, rating: 4.9, sold: 401, badge: "ขายดี", img: "https://images.unsplash.com/photo-1520315342629-6ea920342047?auto=format&fit=crop&w=600&q=80", desc: "กุ้งแคระสีแดง ช่วยเก็บกินเศษอาหารและตะไคร่น้ำ", care: "ค่าน้ำ PH 6.5-7.5 ชอบไม้น้ำและที่หลบซ่อน" },
+      { id: 4, cat: "cat", name: "ลูกแมวสก็อตติชโฟลด์ หูพับแท้", price: 9500, rating: 4.9, sold: 42, badge: "ยอดนิยม", img: "https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=600&q=80", desc: "ฉีดวัคซีนแล้ว 1 เข็ม ขี้อ้อน เลี้ยงคอนโดได้สบาย", care: "แปรงขนสัปดาห์ละ 2 ครั้ง ทานอาหารเกรด Holistics" },
+      { id: 5, cat: "cat", name: "แมวไทยวิเชียรมาศ (สายพันธุ์แท้)", price: 3500, rating: 4.8, sold: 88, badge: null, img: "https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?auto=format&fit=crop&w=600&q=80", desc: "ตาสีฟ้าสด แต้มสีเข้มตามจุดมงคล ขนสั้นดูแลง่าย", care: "ชอบเล่นและเข้าสังคม มีที่ฝนเล็บ" },
+      { id: 6, cat: "dog", name: "ลูกสุนัขปอมเมอเรเนียน หน้าหมี", price: 12500, rating: 4.8, sold: 67, badge: "ขายดี", img: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=600&q=80", desc: "ตัวจิ๋ว ขนฟูแน่น ร่าเริง มีใบPedigree", care: "แปรงขนเป็นประจำทุกวัน" },
+      { id: 7, cat: "rabbit", name: "กระต่ายฮอลแลนด์ลอป (HL แท้)", price: 1800, rating: 4.7, sold: 76, badge: null, img: "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=600&q=80", desc: "หูตก หน้าสั้นกว้าง หัวกลมน่ารัก", care: "เน้นหญ้าแห้งเป็นอาหารหลัก 80%" },
+      { id: 8, cat: "bird", name: "นกคอกคาเทล แก้มส้ม", price: 2400, rating: 4.9, sold: 52, badge: "ยอดนิยม", img: "https://images.unsplash.com/photo-1552728089-57bdde30beb3?auto=format&fit=crop&w=600&q=80", desc: "นกป้อนมือ เชื่องสุดๆ เกาะไหล่ได้", care: "ให้อาหารธัญพืชรวมและผักสด" }
+    ];
+
+    const SALES_TREND = [{ m: "ม.ค.", ยอดขาย: 42000 }, { m: "ก.พ.", ยอดขาย: 38000 }, { m: "มี.ค.", ยอดขาย: 51000 }, { m: "เม.ย.", ยอดขาย: 47000 }, { m: "พ.ค.", ยอดขาย: 63000 }, { m: "มิ.ย.", ยอดขาย: 71000 }, { m: "ก.ค.", ยอดขาย: 84500 }];
+    const CAT_SHARE = [{ name: "ปลา", value: 28, color: TOKENS.fish }, { name: "แมว", value: 32, color: TOKENS.cat }, { name: "สุนัข", value: 22, color: TOKENS.dog }, { name: "กระต่าย/เล็ก", value: 10, color: TOKENS.rabbit }, { name: "นก", value: 5, color: TOKENS.bird }, { name: "เลื้อยคลาน", value: 3, color: TOKENS.reptile }];
+
+    function PawDivider() {
+      return (
+        <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "center", padding: "6px 0" }}>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <LucideIcon key={i} name="PawPrint" size={12} color={TOKENS.line} style={{ opacity: 0.3 + (i % 3) * 0.15, transform: `rotate(${i % 2 ? 15 : -15}deg)` }} />
+          ))}
+        </div>
+      );
+    }
+
+    function PawMarket() {
+      const [view, setView] = useState("shop");
+      const [cart, setCart] = useState([]);
+      const [activeCat, setActiveCat] = useState("all");
+      const [query, setQuery] = useState("");
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [isCartOpen, setIsCartOpen] = useState(false);
+
+      const filtered = PRODUCTS.filter(p => (activeCat === "all" || p.cat === activeCat) && p.name.includes(query));
+
+      return (
+        <div>
+          {/* Header */}
+          <div style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(251,246,239,0.92)", backdropFilter: "blur(10px)", borderBottom: `1px solid ${TOKENS.line}`, padding: "12px 20px" }}>
+            <div style={{ maxWidth: 1140, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("shop")}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: TOKENS.pink, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LucideIcon name="PawPrint" size={22} color="#fff" />
+                </div>
+                <div>
+                  <div style={{ fontFamily: "Prompt", fontWeight: 700, fontSize: 19 }}>อุ้งเท้า</div>
+                  <div style={{ fontFamily: "Sarabun", fontSize: 11, color: TOKENS.inkSoft }}>Paw Market Place</div>
+                </div>
+              </div>
+
+              <button onClick={() => setIsCartOpen(true)} style={{ display: "flex", alignItems: "center", gap: 8, background: TOKENS.ink, color: "#fff", padding: "8px 16px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "Prompt" }}>
+                <LucideIcon name="ShoppingCart" size={16} /> ตะกร้า ({cart.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Hero */}
+          <div style={{ textAlign: "center", padding: "40px 20px 20px" }}>
+            <h1 style={{ fontFamily: "Prompt", fontSize: 32, margin: "0 0 10px" }}>ค้นพบสัตว์เลี้ยงตัวใหม่ 🐾</h1>
+            <p style={{ color: TOKENS.inkSoft, margin: "0 0 20px" }}>รวมปลาสวยงาม แมว สุนัข และสัตว์เลี้ยงน่ารักมากมาย</p>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาสัตว์เลี้ยง..." style={{ padding: "10px 20px", borderRadius: 999, border: `1px solid ${TOKENS.line}`, width: "100%", maxWidth: 360, fontFamily: "Sarabun" }} />
+          </div>
+
+          <PawDivider />
+
+          {/* Filter */}
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", margin: "16px 0" }}>
+            <button onClick={() => setActiveCat("all")} style={{ padding: "6px 14px", borderRadius: 999, border: `1px solid ${TOKENS.line}`, background: activeCat === "all" ? TOKENS.ink : "#fff", color: activeCat === "all" ? "#fff" : TOKENS.ink, cursor: "pointer", fontFamily: "Prompt" }}>ทั้งหมด</button>
+            {CATS.map(c => (
+              <button key={c.id} onClick={() => setActiveCat(c.id)} style={{ padding: "6px 14px", borderRadius: 999, border: `1px solid ${TOKENS.line}`, background: activeCat === c.id ? c.soft : "#fff", color: activeCat === c.id ? c.color : TOKENS.ink, cursor: "pointer", fontFamily: "Prompt" }}>{c.label}</button>
+            ))}
+          </div>
+
+          {/* Grid */}
+          <div style={{ maxWidth: 1140, margin: "0 auto", padding: "20px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 16 }}>
+            {filtered.map(p => (
+              <div key={p.id} onClick={() => setSelectedProduct(p)} style={{ background: "#fff", borderRadius: 16, border: `1px solid ${TOKENS.line}`, overflow: "hidden", cursor: "pointer" }}>
+                <img src={p.img} style={{ width: "100%", height: 160, objectFit: "cover" }} />
+                <div style={{ padding: 14 }}>
+                  <div style={{ fontFamily: "Prompt", fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{p.name}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+                    <div style={{ fontFamily: "Prompt", fontWeight: 700, fontSize: 16 }}>฿{p.price.toLocaleString()}</div>
+                    <button onClick={(e) => { e.stopPropagation(); setCart([...cart, p]); }} style={{ background: TOKENS.cat, color: "#fff", border: "none", padding: "6px 12px", borderRadius: 999, cursor: "pointer", fontSize: 12, fontFamily: "Prompt" }}>+ ใส่ตะกร้า</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Cart Modal */}
+          {isCartOpen && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+              <div style={{ background: "#fff", padding: 24, borderRadius: 20, maxWidth: 450, width: "90%" }}>
+                <h3 style={{ fontFamily: "Prompt", margin: "0 0 16px" }}>🛒 ตะกร้าสินค้า</h3>
+                {cart.length === 0 ? <p>ไม่มีสินค้าในตะกร้า</p> : cart.map((item, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+                    <span>{item.name}</span><b>฿{item.price.toLocaleString()}</b>
+                  </div>
+                ))}
+                <button onClick={() => { alert("สั่งซื้อสำเร็จ!"); setCart([]); setIsCartOpen(false); }} style={{ width: "100%", padding: 10, background: TOKENS.pink, color: "#fff", border: "none", borderRadius: 999, fontWeight: "bold", marginTop: 16, cursor: "pointer" }}>ชำระเงิน</button>
+                <button onClick={() => setIsCartOpen(false)} style={{ width: "100%", padding: 8, background: "none", border: "none", marginTop: 6, cursor: "pointer" }}>ปิด</button>
+              </div>
+            </div>
+          )}
+
+          {/* Detail Modal */}
+          {selectedProduct && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+              <div style={{ background: "#fff", padding: 20, borderRadius: 20, maxWidth: 400, width: "90%" }}>
+                <img src={selectedProduct.img} style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12 }} />
+                <h3 style={{ fontFamily: "Prompt", margin: "10px 0 4px" }}>{selectedProduct.name}</h3>
+                <div style={{ fontFamily: "Prompt", fontWeight: "bold", color: TOKENS.cat, fontSize: 18, marginBottom: 10 }}>฿{selectedProduct.price.toLocaleString()}</div>
+                <p style={{ fontSize: 13, color: TOKENS.inkSoft }}>{selectedProduct.desc}</p>
+                <div style={{ background: TOKENS.bg, padding: 10, borderRadius: 10, fontSize: 12, marginBottom: 14 }}>💡 <b>วิธีดูแล:</b> {selectedProduct.care}</div>
+                <button onClick={() => { setCart([...cart, selectedProduct]); setSelectedProduct(null); }} style={{ width: "100%", padding: 10, background: TOKENS.ink, color: "#fff", border: "none", borderRadius: 999, fontWeight: "bold", cursor: "pointer" }}>ใส่ตะกร้า</button>
+                <button onClick={() => setSelectedProduct(null)} style={{ width: "100%", padding: 8, background: "none", border: "none", marginTop: 6, cursor: "pointer" }}>ปิด</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<PawMarket />);
+  </script>
+</body>
+</html>
